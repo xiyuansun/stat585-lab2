@@ -1,0 +1,41 @@
+---
+title: "README"
+author: "Team 4"
+date: "2/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(sf)
+library(tidyverse)
+library(ggspatial)
+library(maps)
+library(purrr)
+```
+
+
+
+```{r tutorials01}
+p <- ggplot() +
+  geom_sf(data = read_sf("data/ME-GIS/Coastline2.shp"), 
+          colour="grey10", fill="grey90") +
+  geom_sf(data = read_sf("data/ME-GIS/Rivers19.shp"), 
+          colour="steelblue", size=0.3) +
+  geom_sf(data = read_sf("data/ME-GIS/PrimaryRoads.shp"), 
+          size = 0.7, colour="grey30") +
+  geom_sf(data = read_sf("data/ME-GIS/Cities.shp")) +
+  theme_bw()
+p
+
+#add labels and city names
+p + geom_sf_text(aes(label=Name),data = read_sf("data/ME-GIS-master/Cities.shp")) +
+  annotation_scale() + annotation_north_arrow()
+```
+
+
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+
