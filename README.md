@@ -15,12 +15,11 @@ output:
 - Xiyuan Sun
 - Jing Zhao
 
-```{r global_options, include = FALSE}
-knitr::opts_chunk$set(warning = F, message = F, fig.align = "center")
-```
+
 
 ## More map elements
-```{r}
+
+```r
 library(tidyverse)
 library(sf)
 library(ggspatial)
@@ -41,8 +40,11 @@ p <- ggplot(data = read_sf("data/ME-GIS/Cities.shp")) +
 p
 ```
 
+<img src="README_files/figure-html/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
+
 ## Australia shapefile
-```{r}
+
+```r
 # apply to each state/row of geometry feature in the sf dataset
 poly2df <- function(feature, unlist = T) {
   if (unlist) feature <- unlist(feature, recursive = F)
@@ -74,8 +76,11 @@ australia_plus %>% ggplot(aes(x = long, y = lat, group = group)) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+<img src="README_files/figure-html/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+
 ## Mexico shapefile
-```{r}
+
+```r
 mexico <- read_sf("data/gadm36_MEX_shp/gadm36_MEX_1.shp")
 mexico_plus <- makedata(mexico, thin = T, unlist = T)
 mexico_plus %>% ggplot(aes(x = long, y = lat, group = group)) +
@@ -86,12 +91,15 @@ mexico_plus %>% ggplot(aes(x = long, y = lat, group = group)) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+<img src="README_files/figure-html/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+
 
 -----------------------------
 
 
 **In order to do this second part, I used 4 helper functions.**
-```{r, eval=F}
+
+```r
 #four helper functions
 #one to format the data frame
 #one to un-nest each level of the list (3 total)
@@ -144,7 +152,8 @@ unnest_state<-function(geomdataset){
 ```
 
 Using the functions above, we only need one call to get from the shapefile to the dataframe. First, we use the function to get it down to a feasible size.
-```{r, eval=F}
+
+```r
 #thin the data
 ozbig <- read_sf("data/gadm36_AUS_shp/gadm36_AUS_1.shp")
 oz_st <- maptools::thinnedSpatialPoly(
@@ -161,7 +170,8 @@ ozplus %>% ggplot(aes(x = long, y = lat, group = group, fill=as.factor(grp))) + 
 ```
 
 We can try it on another country as well:
-```{r, eval=F}
+
+```r
 #test on mexico shape file    
 mxbig <- read_sf("data/gadm36_MEX_1.shp")
 mx_st <- maptools::thinnedSpatialPoly(
