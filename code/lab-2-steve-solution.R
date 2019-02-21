@@ -42,37 +42,60 @@ str(oz$geometry[[1]])
 head(oz$geometry[[1]][[3]][[1]])
 head(oz$geometry[[1]])
 
-#three helper functions
+#four helper functions
+#one to format the data frame
+#one to un-nest each level of the list (3 total)
 ptdf <- function(poly){
+  #take the data frame
+  #format it into latitude, longitude, point order
   poly <- data.frame(poly);
   dfout <- data.frame(long=poly[,1],lat=poly[,2], order=seq(1:nrow(poly)))
   return(dfout)
 }
 
-unngroup <- function(polylist){
-polylength <- length(polylist)
-pdf <- data.frame(slist=seq(1:polylength)) %>% mutate(df= purrr::map(polylist, ptdf)) %>% unnest()
+unnest_lowest <- function(polylist){
+  #unnest the lowest level list of each polygon
+  #most are just lists with length 1, some have 2
+  polylength <- length(polylist)
+  #slist is an index of the dataframe in the list
+  #map the dataframe function for each element of the list, unnest into a dataframe
+  pdf <- data.frame(slist=seq(1:polylength)) %>%
+    mutate(df= purrr::map(polylist, ptdf)) %>%
+    unnest()
 return(pdf)
 }
 
-poly_to_df<- function(p, poly, group){
-  group = p %>% length %>% purrr::map(seq, from=1) %>% unlist
-  polydf <- tibble(group=group) %>% mutate(polyg = p %>% purrr::map(unngroup))
+unnest_division<- function(p, poly, group){
+  #for each division in each state, get the polygons in dataframe above
+  #first, generate a sequence of indices
+  group = p %>% length %>%
+    purrr::map(seq, from=1) %>%
+    unlist
+  #next, get the list of dataframes from above for each division
+  polydf <- tibble(group=group) %>%
+    mutate(polyg = p %>% purrr::map(unnest_lowest))
   return(polydf)
 }
 
-ungroup_poly<-function(geomdataset){
+unnest_state<-function(geomdataset){
+  #for each state, get the list of dataframes and unnest
+  #first, generate a sequence of state-level indices
   totallength <- geomdataset %>% length
   outdf <- tibble(grp = seq(1:totallength))
-  outdf <- outdf %>% mutate(plist = (geomdataset%>% purrr::map(poly_to_df) %>% purrr::map(unnest))) #%>%
-    #mutate(group=paste(grp,',',slist)) %>% select(-slist)
+  #get the list of polygon dataframes and then unnest each division within the state
+  outdf <- outdf %>% mutate(plist = (geomdataset %>% purrr::map(unnest_division) %>% purrr::map(unnest)))
+  #now, unnest the dataframe within each state
+  #then get a unique group index for each polygon by combining each lower level index
+  outdf <- outdf %>% unnest() %>%
+    mutate(group= paste(grp,'.',group,'.',slist)) 
   return(outdf)
 }
 
-lapply(oz$geometry, function(x) lapply(x,length)) %>% unlist
 
 # map of australia
-ozplus <- oz$geometry %>% ungroup_poly() %>% unnest() %>% mutate(group= paste(grp,'.',group,'.',slist))
+ozplus <- oz$geometry %>% unnest_state 
+ozplus %>% ggplot(aes(x = long, y = lat, group = group)) + geom_polygon()
+#with color by state
 ozplus %>% ggplot(aes(x = long, y = lat, group = group, fill=as.factor(grp))) + geom_polygon()
                  
 #test on mexico shape file    
@@ -82,5 +105,6 @@ mx_st <- maptools::thinnedSpatialPoly(
   minarea = 0.001, topologyPreserve = TRUE)
 mx <- st_as_sf(mx_st)
 
-mxplus <- mx$geometry %>% ungroup_poly() %>% unnest() %>% mutate(group= paste(grp,'.',group,'.',slist))
-mxplus %>% ggplot(aes(x = long, y = lat, group = group,fill=as.factor(grp))) + geom_polygon()
+#plot of mexico
+mxplus <- mx$geometry %>% unnest_state() %>% unnest() %>% mutate(group= paste(grp,'.',group,'.',slist))
+mxplus %>% ggplot(aes(x = long, y = lat, group = group)) + geom_polygon()
